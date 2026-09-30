@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}全部文件 · Paperflow{% endblock %}
+{% block content %}
+<div class="page-head">
+  <a class="back" href="/papers/{{ paper.paper_id }}">← 返回论文</a>
+  <p class="eyebrow">论文资产</p>
+  <h1>{{ paper.title }}</h1>
+  <p>冻结原稿和官方期刊模板只可下载查看，不应原地编辑或覆盖。</p>
+</div>
+<section class="panel file-panel">
+  <div class="file-row header"><span>文件</span><span>大小</span></div>
+  {% for file in files %}<a class="file-row" href="/papers/{{ paper.paper_id }}/files/{{ file.path }}"><span>{{ file.path }}</span><span>{{ '%.1f' | format(file.size / 1024) }} KB</span></a>{% endfor %}
+</section>
+{% endblock %}

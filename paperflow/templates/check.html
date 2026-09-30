@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}项目检查 · Paperflow{% endblock %}
+{% block content %}
+<div class="page-head">
+  <a class="back" href="/papers/{{ detail.paper.paper_id }}">← 返回论文</a>
+  <p class="eyebrow">项目检查</p>
+  <h1>{{ detail.paper.title }}</h1>
+  <p>这里检查文件一致性、哈希、证据关联和常见投稿残留，不替代科研、翻译或视觉人工审核。</p>
+</div>
+<section class="panel">
+{% if issues %}
+  <div class="check-summary warning">发现 {{ issues | length }} 项需要处理</div>
+  <ul class="check-list">{% for issue in issues %}<li class="{{ issue.severity }}"><code>{{ issue.code }}</code><span>{{ issue.message }}</span></li>{% endfor %}</ul>
+{% else %}
+  <div class="check-summary pass">当前自动检查通过</div>
+  <p>这表示记录结构没有发现问题，不表示科研结论、翻译和页面版式已经人工确认。</p>
+{% endif %}
+</section>
+{% endblock %}

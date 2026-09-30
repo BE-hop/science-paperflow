@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}翻译审核 · Paperflow{% endblock %}
+{% block content %}
+<div class="page-head paper-heading">
+  <div>
+    <a class="back" href="/papers/{{ detail.paper.paper_id }}">← 返回论文</a>
+    <p class="eyebrow">中英对照审核</p>
+    <h1>{{ detail.paper.title }}</h1>
+    <p>Agent 只提供候选译文。请重点审核术语、数字、单位、因果、确定性和引用。</p>
+  </div>
+  <div class="translation-progress"><strong>{{ detail.translation_confirmed }}/{{ detail.translation_total }}</strong><small>已人工确认</small></div>
+</div>
+<nav class="filter-tabs">
+  <a class="{{ 'active' if view == 'pending' }}" href="?view=pending">待确认</a>
+  <a class="{{ 'active' if view == 'risk' }}" href="?view=risk">有风险</a>
+  <a class="{{ 'active' if view == 'all' }}" href="?view=all">全部</a>
+</nav>
+{% if segments %}
+<section class="translation-list">
+{% for segment in segments %}
+  <article class="translation-unit">
+    <div class="unit-meta"><span>{{ segment.unit_id }}</span><span>{{ segment.kind }}</span><strong class="job-status {{ segment.status }}">{{ segment.status }}</strong></div>
+    <div class="translation-columns">
+      <div><small>中文原文</small><p>{{ segment.source_zh }}</p></div>
+      <form action="/papers/{{ detail.paper.paper_id }}/translation/{{ segment.unit_id }}" method="post">
+        <label><span>最终英文</span><textarea name="final_en" required>{{ segment.final_en or segment.candidate_en }}</textarea></label>
+        {% if segment.terminology_risks or segment.fact_risks %}
+        <div class="risk-box">{% for risk in segment.terminology_risks %}<span>术语：{{ risk }}</span>{% endfor %}{% for risk in segment.fact_risks %}<span>事实：{{ risk }}</span>{% endfor %}</div>
+        {% endif %}
+        <label><span>修改说明（可选）</span><input name="change_reason" value="{{ segment.change_reason }}" placeholder="为什么采用这个表达？"></label>
+        <div class="review-actions"><button class="button secondary" type="submit">保存待复核</button><button class="button primary" type="submit" name="confirm" value="yes">确认此单元</button></div>
+      </form>
+    </div>
+  </article>
+{% endfor %}
+</section>
+{% else %}
+<section class="empty-state"><h2>这个视图没有内容</h2><p>如果所有单元都已确认，可以返回论文页面确认英文主稿。</p></section>
+{% endif %}
+{% endblock %}

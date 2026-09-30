@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}新建论文 · Paperflow{% endblock %}
+{% block content %}
+<div class="page-head">
+  <a class="back" href="/">← 返回工作台</a>
+  <p class="eyebrow">第一步</p>
+  <h1>这篇论文从哪里开始？</h1>
+  <p>选择最接近当前情况的一项，Paperflow 会准备对应的工作区。</p>
+</div>
+
+<form class="form-card narrow" action="/papers" method="post">
+  <label>
+    <span>论文标题</span>
+    <input name="title" required autofocus placeholder="例如：城市热环境的多尺度分析">
+  </label>
+  <fieldset class="choice-grid">
+    <legend>当前材料</legend>
+    <label class="choice-card">
+      <input type="radio" name="entry" value="existing_chinese" checked>
+      <span><strong>我已有中文稿</strong><small>下一步上传 DOCX，系统自动提取翻译单元。</small></span>
+    </label>
+    <label class="choice-card">
+      <input type="radio" name="entry" value="new_research">
+      <span><strong>从研究问题开始</strong><small>下一步填写问题、假设、数据和限制。</small></span>
+    </label>
+  </fieldset>
+  <div class="two-columns">
+    <label><span>年份</span><input type="number" name="year" value="{{ current_year }}" required></label>
+    <label><span>短名称（可选）</span><input name="slug" placeholder="urban-heat"></label>
+  </div>
+  <button class="button primary wide" type="submit">建立论文项目</button>
+</form>
+{% endblock %}

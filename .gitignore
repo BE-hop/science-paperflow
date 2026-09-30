@@ -1,0 +1,32 @@
+# User research and unpublished manuscripts
+papers/P-*/
+literature/
+
+# Local Paperflow agent state
+papers/.paperflow/
+.paperflow/
+
+# Python and test artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.coverage
+htmlcov/
+
+# Local environments and editor files
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
+
+# Temporary and log files
+*.log
+*.tmp
+*.swp

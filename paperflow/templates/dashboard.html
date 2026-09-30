@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}论文工作台 · Paperflow{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <div>
+    <p class="eyebrow">你的科研项目</p>
+    <h1>现在只看下一步。</h1>
+    <p>你负责判断和确认，系统与 Agent 处理文件、检查和整理工作。</p>
+  </div>
+  <a class="button primary" href="/papers/new">新建论文</a>
+</section>
+
+{% if cards %}
+<section class="card-grid">
+  {% for card in cards %}
+  <article class="paper-card">
+    <div class="card-topline">
+      <span class="paper-id">{{ card.paper_id }}</span>
+      {% if active_jobs.get(card.paper_id) %}<span class="badge running">Agent 处理中</span>{% endif %}
+    </div>
+    <h2>{{ card.title }}</h2>
+    <p class="stage-label">{{ card.current_stage.label }}</p>
+    <div class="progress"><span style="width: {{ card.progress }}%"></span></div>
+    <div class="next-box">
+      <small>建议下一步</small>
+      <strong>{{ card.next_action.label }}</strong>
+      <p>{{ card.next_action.description }}</p>
+    </div>
+    {% if card.blockers %}
+      <p class="warning-line">阻塞：{{ card.blockers | join('；') }}</p>
+    {% endif %}
+    {% if card.issue_count %}
+      <p class="warning-line">{{ card.issue_count }} 项需要检查</p>
+    {% endif %}
+    <div class="card-actions">
+      <a class="button primary wide" href="/papers/{{ card.paper_id }}#next-action">继续下一步</a>
+      <a class="text-link" href="/papers/{{ card.paper_id }}/files">查看全部文件</a>
+      <a class="text-link" href="/papers/{{ card.paper_id }}/check">检查项目</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% else %}
+<section class="empty-state">
+  <div class="empty-icon">01</div>
+  <h2>建立第一篇论文</h2>
+  <p>只需选择工作方式并填写标题，后续步骤会逐项出现。</p>
+  <a class="button primary" href="/papers/new">开始建立</a>
+</section>
+{% endif %}
+{% endblock %}

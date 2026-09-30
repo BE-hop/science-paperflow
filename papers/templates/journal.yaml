@@ -1,0 +1,23 @@
+schema_version: '1.0'
+journal_id: journal-slug
+journal_name: ''
+status: active
+article_type: ''
+official_guidelines_url: ''
+requirements_verified_at: null
+official_template: null
+limits:
+  manuscript_words: null
+  abstract_words: null
+  keywords: null
+section_order: []
+blind_review: false
+reference_style: ''
+required_statements: []
+required_submission_files: []
+submission_filename_rules: []
+master_manuscript: 03_manuscript/master_en.docx
+derived_manuscript: 04_journal/journal-slug/derived/manuscript.docx
+qa:
+  structural_audit: {passed: false, checked_at: null, evidence: ''}
+  render_review: {passed: false, checked_at: null, reviewer: '', evidence: ''}

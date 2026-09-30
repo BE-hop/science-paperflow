@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}{{ detail.paper.title }} · Paperflow{% endblock %}
+{% block content %}
+<div class="page-head paper-heading">
+  <div>
+    <a class="back" href="/">← 返回工作台</a>
+    <p class="eyebrow">{{ detail.paper.paper_id }} · {{ detail.paper.overall_status }}</p>
+    <h1>{{ detail.paper.title }}</h1>
+  </div>
+  <div class="head-actions">
+    <a class="button secondary" href="/papers/{{ detail.paper.paper_id }}/files">全部文件</a>
+    <a class="button secondary" href="/papers/{{ detail.paper.paper_id }}/check">项目检查</a>
+  </div>
+</div>
+
+<nav class="stage-track" aria-label="论文阶段">
+  {% for stage in detail.stages %}
+  <div class="stage {{ stage.state }}">
+    <span>{{ loop.index }}</span>
+    <div><strong>{{ stage.label }}</strong><small>{{ '已确认' if stage.state == 'complete' else '当前阶段' if stage.state == 'current' else '稍后进行' }}</small></div>
+  </div>
+  {% endfor %}
+</nav>
+
+<div class="workspace-grid">
+  <section class="main-column">
+    <article class="focus-card" id="next-action">
+      <p class="eyebrow">建议下一步</p>
+      <h2>{{ detail.next_action.label }}</h2>
+      <p>{{ detail.next_action.description }}</p>
+
+      {% set action = detail.next_action.key %}
+      {% if action == 'upload_source' %}
+      <form action="/papers/{{ detail.paper.paper_id }}/source" method="post" enctype="multipart/form-data">
+        <label class="dropzone"><input type="file" name="source" accept=".docx" required><span><strong>选择中文 DOCX</strong><small>上传后自动冻结、计算哈希并提取内容。</small></span></label>
+        <button class="button primary" type="submit">上传并开始处理</button>
+      </form>
+      {% elif action == 'research_question' %}
+      <form action="/papers/{{ detail.paper.paper_id }}/research-question" method="post" class="stack-form">
+        <label><span>研究问题</span><textarea name="question" required placeholder="需要回答的核心问题是什么？"></textarea></label>
+        <label><span>关键假设</span><textarea name="assumptions" placeholder="哪些条件成立时，这个研究才有效？"></textarea></label>
+        <label><span>数据来源</span><textarea name="data_source" placeholder="数据来自哪里、当前是否可用？"></textarea></label>
+        <label><span>已知限制</span><textarea name="limitations" placeholder="样本、方法或外推范围有哪些限制？"></textarea></label>
+        <button class="button primary" type="submit">保存研究边界</button>
+      </form>
+      {% elif action.startswith('approve_') %}
+        {% set gate = action.replace('approve_', '') %}
+        <form action="/papers/{{ detail.paper.paper_id }}/gates/{{ gate }}/approve" method="post" class="confirm-form">
+          <label><span>你的确认说明</span><textarea name="note" required placeholder="我确认了哪些材料、结论或风险？"></textarea></label>
+          <div class="human-check"><span>仅你可以执行</span>Agent 不会代替你批准人工关卡。</div>
+          <button class="button primary" type="submit">确认并批准 {{ gate }}</button>
+        </form>
+      {% elif action in ['agent_translation', 'agent_journal', 'agent_review'] %}
+        {% set prompts = {'agent_translation':'读取翻译单元，生成候选译文、术语建议和风险提示，不确认任何单元。','agent_journal':'根据已登记的期刊要求和官方模板准备候选派生稿与 QA 材料，不登记人工通过。','agent_review':'整理审稿意见、问题清单和候选回复，不改变核心科研结论。'} %}
+        <form action="/papers/{{ detail.paper.paper_id }}/agent" method="post">
+          <input type="hidden" name="prompt" value="{{ prompts[action] }}">
+          <button class="button primary" type="submit" {% if active_job or not agent_available %}disabled{% endif %}>交给 Agent 处理</button>
+        </form>
+      {% elif action == 'review_translation' %}
+        <a class="button primary" href="/papers/{{ detail.paper.paper_id }}/translation">进入中英对照审核</a>
+      {% elif action == 'master' %}
+      <div class="split-actions">
+        <form action="/papers/{{ detail.paper.paper_id }}/master" method="post" enctype="multipart/form-data">
+          <label class="dropzone"><input type="file" name="document" accept=".docx" required><span><strong>上传英文主稿</strong><small>已有英文稿时使用。</small></span></label>
+          <button class="button primary" type="submit">登记主稿</button>
+        </form>
+        <form action="/papers/{{ detail.paper.paper_id }}/agent" method="post">
+          <input type="hidden" name="prompt" value="根据已确认的内容准备英文主稿候选，保留科学含义、数值、单位和引用，并列出待人工确认问题。">
+          <button class="button secondary" type="submit" {% if active_job or not agent_available %}disabled{% endif %}>交给 Agent 准备</button>
+        </form>
+      </div>
+      {% elif action == 'journal' %}
+      <form action="/papers/{{ detail.paper.paper_id }}/journal" method="post" enctype="multipart/form-data" class="stack-form">
+        <div class="two-columns">
+          <label><span>期刊名称</span><input name="journal" required></label>
+          <label><span>稿件类型</span><input name="article_type" required placeholder="Original Article"></label>
+        </div>
+        <label><span>官方作者指南</span><input name="guidelines_url" type="url" required placeholder="https://..."></label>
+        <div class="two-columns">
+          <label><span>核验日期</span><input name="verified_at" type="date" required></label>
+          <label><span>官方模板（可选）</span><input name="template" type="file" accept=".docx,.zip"></label>
+        </div>
+        <button class="button primary" type="submit">登记期刊</button>
+      </form>
+      {% elif action == 'journal_qa' %}
+      <form action="/papers/{{ detail.paper.paper_id }}/journals/{{ detail.active_journal.journal_id }}/qa" method="post" class="stack-form">
+        <div class="human-check"><span>需要真实检查</span>Agent 可以准备材料，但全页视觉结论必须由人确认。</div>
+        <label><span>结构检查证据</span><input name="structural_evidence" required placeholder="例如：04_journal/.../qa/structure.md"></label>
+        <div class="two-columns">
+          <label><span>视觉检查人</span><input name="reviewer" required placeholder="你的姓名或稳定标识"></label>
+          <label><span>全页视觉检查证据</span><input name="render_evidence" required placeholder="例如：04_journal/.../qa/render-review.md"></label>
+        </div>
+        <button class="button primary" type="submit">确认两项检查已真实完成</button>
+      </form>
+      {% elif action == 'submission' %}
+      <form action="/papers/{{ detail.paper.paper_id }}/submission" method="post" enctype="multipart/form-data">
+        <label class="dropzone"><input type="file" name="document" required><span><strong>选择投稿文件</strong><small>历史文件不会被覆盖。</small></span></label>
+        <button class="button primary" type="submit">加入投稿包</button>
+      </form>
+      {% elif action == 'review_upload' %}
+      <form action="/papers/{{ detail.paper.paper_id }}/reviews" method="post" enctype="multipart/form-data" class="stack-form">
+        <label><span>返修轮次</span><input name="round_name" value="R1" required></label>
+        <label class="dropzone"><input type="file" name="document" required><span><strong>选择编辑信或审稿意见</strong><small>每一轮材料会独立保留。</small></span></label>
+        <button class="button primary" type="submit">加入审稿材料</button>
+      </form>
+      {% elif action == 'check_submission' %}
+      <div class="split-actions">
+        <a class="button primary" href="/papers/{{ detail.paper.paper_id }}/check">检查投稿包</a>
+        <form action="/papers/{{ detail.paper.paper_id }}/gates/G4/approve" method="post" class="inline-form">
+          <input name="note" required placeholder="说明已核对的投稿材料">
+          <button class="button secondary" type="submit">人工确认 G4</button>
+        </form>
+      </div>
+      {% else %}
+      <a class="button primary" href="/papers/{{ detail.paper.paper_id }}/files">查看完整记录</a>
+      {% endif %}
+    </article>
+
+    <article class="panel">
+      <div class="panel-head"><div><p class="eyebrow">当前情况</p><h2>{{ detail.current_stage.label }}</h2></div><strong>{{ detail.progress }}%</strong></div>
+      <div class="metric-grid">
+        <div><small>翻译单元</small><strong>{{ detail.translation_confirmed }}/{{ detail.translation_total }}</strong></div>
+        <div><small>检查问题</small><strong>{{ detail.issues | length }}</strong></div>
+        <div><small>下一关卡</small><strong>{{ detail.paper.next_gate or '完成' }}</strong></div>
+      </div>
+      {% if detail.issues %}
+      <details><summary>查看当前检查问题</summary><ul class="issue-list">{% for issue in detail.issues[:8] %}<li><code>{{ issue.code }}</code>{{ issue.message }}</li>{% endfor %}</ul></details>
+      {% endif %}
+    </article>
+
+    <details class="panel secondary-panel">
+      <summary>更多人工操作</summary>
+      <div class="gate-list">
+      {% for gate, record in detail.paper.gates.items() %}
+        <div><strong>{{ gate }}</strong><span>{{ '已批准' if record.approved else '未批准' }}</span>
+        {% if not record.approved %}
+          <form action="/papers/{{ detail.paper.paper_id }}/gates/{{ gate }}/approve" method="post" class="inline-form"><input name="note" required placeholder="人工确认说明"><button class="button small" type="submit">批准</button></form>
+        {% endif %}</div>
+      {% endfor %}
+      </div>
+      <form action="/papers/{{ detail.paper.paper_id }}/advance" method="post"><button class="text-button" type="submit">按建议推进总体阶段</button></form>
+    </details>
+  </section>
+
+  <aside class="agent-panel">
+    <div class="agent-heading"><span class="agent-avatar">A</span><div><h2>Agent 助手</h2><p>{{ '可以开始新任务' if agent_available else agent_reason }}</p></div></div>
+    {% if active_job %}
+      <div class="active-job"><span class="spinner"></span><strong>正在处理</strong><p>{{ active_job.prompt }}</p><a href="/jobs/{{ active_job.job_id }}">查看进度</a></div>
+    {% else %}
+      <form action="/papers/{{ detail.paper.paper_id }}/agent" method="post" class="agent-form">
+        <label for="agent-prompt">告诉 Agent 需要收尾什么</label>
+        <textarea id="agent-prompt" name="prompt" required placeholder="例如：检查还有哪些段落没有确认，并整理风险清单。"></textarea>
+        <div class="suggestions">
+          <button type="button" data-prompt="检查这篇论文当前缺少什么，并把检查报告写入 qa，不修改论文内容。">检查缺失项</button>
+          <button type="button" data-prompt="检查翻译单元、术语、数值、因果和引用风险，生成候选修改，不确认任何结论。">检查翻译</button>
+          <button type="button" data-prompt="整理当前期刊材料、模板要求和未解决项，准备 QA 报告。">整理期刊</button>
+        </div>
+        <button class="button dark wide" type="submit" {% if not agent_available %}disabled{% endif %}>交给 Agent</button>
+      </form>
+    {% endif %}
+    {% if jobs %}
+      <div class="recent-jobs"><h3>最近任务</h3>{% for job in jobs[:4] %}<a href="/jobs/{{ job.job_id }}"><span>{{ job.action }}</span><strong class="job-status {{ job.status }}">{{ job.status }}</strong></a>{% endfor %}</div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

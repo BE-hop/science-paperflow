@@ -1,0 +1,27 @@
+schema_version: '1.0'
+paper_id: P-YYYY-NNN
+title: ''
+short_title: ''
+entry_path: existing_chinese
+created_at: null
+updated_at: null
+overall_status: drafting
+tracks:
+  research_status: not_applicable
+  manuscript_status: in_progress
+  translation_status: not_started
+  journal_status: not_started
+  submission_status: not_started
+current_tasks: []
+blockers: []
+next_gate: G0
+target_date: null
+gates:
+  G0: {approved: false, approved_at: null, note: ''}
+  G1: {approved: false, approved_at: null, note: ''}
+  G2: {approved: false, approved_at: null, note: ''}
+  G3: {approved: false, approved_at: null, note: ''}
+  G4: {approved: false, approved_at: null, note: ''}
+  G5: {approved: false, approved_at: null, note: ''}
+source_files: []
+journal_profiles: []
